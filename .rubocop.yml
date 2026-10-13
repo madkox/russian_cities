@@ -1,0 +1,9 @@
+inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+
+AllCops:
+  Exclude:
+    - "lib/russian_cities/data/**/*"
+    - "vendor/**/*"
+
+Layout/SpaceInsideArrayLiteralBrackets:
+  EnforcedStyle: no_space
