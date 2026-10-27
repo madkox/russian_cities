@@ -59,6 +59,13 @@ RSpec.describe RussianCities do
       expect(abakan.region.cities).to include(abakan)
     end
 
+    it "types every region as a federal subject" do
+      expect(region.all.map(&:region_type).tally).to eq(
+        "республика" => 22, "край" => 9, "область" => 46, "автономная область" => 1, "автономный округ" => 4,
+        "город федерального значения" => 3
+      )
+    end
+
     it "exposes the administrative area from hflabs/city" do
       mirny = city.find_by(name: "Мирный", region_id: region.find_by(name: "Якутия").id)
 
@@ -90,6 +97,32 @@ RSpec.describe RussianCities do
       expect(city.find_by(name: "Пушкин")).to have_attributes(
         oktmo: "40397000", municipality_type: "внутригородское муниципальное образование", municipality: "город Пушкин"
       )
+    end
+
+    it "shortens municipality names and types" do
+      expect(city.find_by(name: "Алексин")).to have_attributes(
+        short_municipality_type: "г.о.", short_municipality: "г.о. г. Алексин"
+      )
+      expect(city.find_by(name: "Бикин").short_municipality).to eq("Бикинский м.о.")
+      expect(city.find_by(name: "Абинск").short_municipality).to eq("Абинский м.р-н")
+      expect(city.find_by(name: "Анапа").short_municipality).to eq("м.о. г.-к. Анапа")
+      expect(city.find_by(name: "Тара").short_municipality).to eq("м.о. Тарский р-н")
+      expect(city.find_by(name: "Пушкин").short_municipality_type).to eq("вн.тер.г.")
+      expect(city.find_by(name: "Москва")).to have_attributes(short_municipality_type: nil, short_municipality: nil)
+    end
+
+    it "leaves words that merely contain a term intact" do
+      expect(city.find_by(name: "Волгоград").short_municipality).to eq("г.о. город-герой Волгоград")
+      expect(city.find_by(name: "Муром").short_municipality).to eq("г.о. округ Муром")
+    end
+
+    it "shortens region names" do
+      expect(region.find_by(name: "Алтайский край").short_name).to eq("Алтайский кр.")
+      expect(region.find_by(name: "Амурская область").short_name).to eq("Амурская обл.")
+      expect(region.find_by(name: "Хакасия").short_name).to eq("респ. Хакасия")
+      expect(region.find_by(name: "Чувашия").short_name).to eq("респ. Чувашия")
+      expect(region.find_by(name: "Москва").short_name).to eq("г. Москва")
+      expect(region.find_by(name: "Еврейская АО").short_name).to eq("Еврейская АО")
     end
 
     it "distinguishes same-named cities by region" do

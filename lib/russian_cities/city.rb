@@ -8,5 +8,11 @@ module RussianCities
 
     belongs_to :region, class_name: "RussianCities::Region"
     belongs_to :district, class_name: "RussianCities::District"
+
+    # "городской округ" => "г.о."
+    def short_municipality_type = Abbreviation.shorten(municipality_type)
+
+    # "городской округ город Алексин" => "г.о. г. Алексин"
+    def short_municipality = Abbreviation.shorten(municipality)
   end
 end

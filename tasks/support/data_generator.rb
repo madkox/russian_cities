@@ -40,6 +40,16 @@ module RussianCities
       "Чувашская Республика" => "Чувашия"
     }.freeze
     AREAS_REGION_SUFFIXES = { "обл" => "область", "край" => "край", "АО" => "АО" }.freeze
+    # hflabs region_type => type of federal subject. Чувашия is the only republic hflabs types by its name.
+    AREAS_REGION_TYPES = {
+      "Респ" => "республика",
+      "Чувашия" => "республика",
+      "край" => "край",
+      "обл" => "область",
+      "Аобл" => "автономная область",
+      "АО" => "автономный округ",
+      "г" => "город федерального значения"
+    }.freeze
 
     class InconsistentData < StandardError; end
 
@@ -55,7 +65,7 @@ module RussianCities
       oktmo = OktmoIndex.new(OKTMO_PATH)
 
       districts = build_districts(rows)
-      regions = build_regions(rows, districts)
+      regions = build_regions(rows, districts, region_types(areas))
       cities = build_cities(rows, areas, oktmo, regions, districts)
 
       write("districts", District, districts.values)
@@ -107,6 +117,15 @@ module RussianCities
         end
       end
 
+      def region_types(areas)
+        areas.group_by { |(_, region), _| region }.to_h do |region, matches|
+          types = matches.map { |_, row| AREAS_REGION_TYPES.fetch(row.fetch("region_type")) }.uniq
+          raise InconsistentData, "Region #{region} has several types: #{types.inspect}" if types.size > 1
+
+          [region, types.first]
+        end
+      end
+
       # The sources disagree on ё (e.g. "Киселёвск" vs "Киселевск").
       def area_key(name, region)
         [name.tr("ё", "е"), region]
@@ -120,7 +139,7 @@ module RussianCities
         end
       end
 
-      def build_regions(rows, districts)
+      def build_regions(rows, districts, types)
         ids = IdAllocator.new(Region.all.to_h { |region| [region.name, region.id] })
         pairs = rows.map { |row| [row.fetch("subject"), row.fetch("district")] }.uniq
 
@@ -129,7 +148,7 @@ module RussianCities
         end
 
         pairs.sort.to_h do |name, district|
-          [name, { id: ids.fetch(name), name: name, district_id: districts.fetch(district)[:id] }]
+          [name, { id: ids.fetch(name), name: name, region_type: types.fetch(name), district_id: districts.fetch(district)[:id] }]
         end
       end
 

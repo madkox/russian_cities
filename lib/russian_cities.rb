@@ -3,6 +3,7 @@
 require "active_hash"
 
 require_relative "russian_cities/version"
+require_relative "russian_cities/abbreviation"
 require_relative "russian_cities/district"
 require_relative "russian_cities/region"
 require_relative "russian_cities/city"

@@ -6,7 +6,7 @@ Russian cities, federal subjects (regions) and federal districts as interlinked
 | Model                      | Attributes                                                                                                                     | Count |
 |----------------------------|--------------------------------------------------------------------------------------------------------------------------------|-------|
 | `RussianCities::District`  | `id`, `name`                                                                                                                   | 8     |
-| `RussianCities::Region`    | `id`, `name`, `district_id`                                                                                                    | 85    |
+| `RussianCities::Region`    | `id`, `name`, `region_type`, `district_id`                                                                                     | 85    |
 | `RussianCities::City`      | `id`, `name`, `region_id`, `district_id`, `population`, `lat`, `lon`, `area_type`, `area`, `oktmo`, `municipality_type`, `municipality` | 1134  |
 
 ## Installation
@@ -49,6 +49,32 @@ city's OKTMO code. It is the formation's 8-digit code for towns that OKTMO lists
 `"Губкинский городской округ"` and `"город Абакан"` becomes `"городской округ город Абакан"`.
 These fields are `nil` for Moscow, Saint Petersburg, Sevastopol, and for Балаклава, Зеленоград and Московский,
 which have no formation of their own.
+
+### Region type
+
+`region_type` is the kind of federal subject: `"республика"`, `"край"`, `"область"`, `"автономная область"`,
+`"автономный округ"` or `"город федерального значения"`.
+
+### Short forms
+
+`City#short_municipality`, `City#short_municipality_type` and `Region#short_name` use the ФИАС abbreviations
+(Приказ Минфина № 171н): `"городской округ город Алексин"` becomes `"г.о. г. Алексин"`, `"Бикинский муниципальный
+округ"` becomes `"Бикинский м.о."`, and `"Алтайский край"` becomes `"Алтайский кр."`. Republics and federal cities,
+whose names carry no type, get it from `region_type`: `"респ. Хакасия"`, `"г. Москва"`.
+
+| Full                                         | Short       |
+|----------------------------------------------|-------------|
+| муниципальный район                          | м.р-н       |
+| муниципальный округ                          | м.о.        |
+| городской округ                              | г.о.        |
+| внутригородское муниципальное образование    | вн.тер.г.   |
+| город-курорт                                 | г.-к.       |
+| город                                        | г.          |
+| район                                        | р-н         |
+| область                                      | обл.        |
+| край                                         | кр.         |
+
+Only whole words are shortened, so `"город-герой"` and `"Новгород"` stay as they are.
 
 ### Administrative area
 
