@@ -27,6 +27,11 @@ RSpec.describe RussianCities do
       expect(mismatched).to be_empty
     end
 
+    it "resolves nearly every city to an OKTMO municipal formation" do
+      expect(city.where(municipality: nil).map(&:name))
+        .to contain_exactly("Балаклава", "Зеленоград", "Москва", "Московский", "Санкт-Петербург", "Севастополь")
+    end
+
     it "has unique ids per model" do
       [district, region, city].each do |model|
         expect(model.all.map(&:id)).to eq(model.all.map(&:id).uniq)
@@ -52,6 +57,39 @@ RSpec.describe RussianCities do
       expect(siberia.regions).to include(abakan.region)
       expect(siberia.cities).to include(abakan)
       expect(abakan.region.cities).to include(abakan)
+    end
+
+    it "exposes the administrative area from hflabs/city" do
+      mirny = city.find_by(name: "Мирный", region_id: region.find_by(name: "Якутия").id)
+
+      expect(mirny).to have_attributes(area_type: "у", area: "Мирнинский")
+    end
+
+    it "resolves the current municipal formation even without an administrative area" do
+      expect(city.find_by(name: "Бикин")).to have_attributes(
+        area: nil, oktmo: "08509000001", municipality_type: "муниципальный округ", municipality: "Бикинский муниципальный округ"
+      )
+    end
+
+    it "names городские округа by OKTMO conventions" do
+      expect(abakan.municipality).to eq("городской округ город Абакан")
+      expect(city.find_by(name: "Губкин").municipality).to eq("Губкинский городской округ")
+      expect(city.find_by(name: "Радужный", region_id: region.find_by(name: "Ханты-Мансийский АО").id).municipality)
+        .to eq("городской округ Радужный")
+    end
+
+    it "takes the municipality type from the group header inside autonomous okrugs" do
+      expect(city.find_by(name: "Когалым").municipality_type).to eq("городской округ")
+    end
+
+    it "matches cities spelled without ё in the other sources" do
+      expect(city.find_by(name: "Белёв")).to have_attributes(area: "Белевский", municipality: "Белевский муниципальный район")
+    end
+
+    it "falls back to inner-city formations of federal cities" do
+      expect(city.find_by(name: "Пушкин")).to have_attributes(
+        oktmo: "40397000", municipality_type: "внутригородское муниципальное образование", municipality: "город Пушкин"
+      )
     end
 
     it "distinguishes same-named cities by region" do
